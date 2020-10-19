@@ -1,0 +1,112 @@
+---
+title: "Introduction"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+*trending* aims to provides a coherent interface to several modelling tools.
+Whilst it is useful in an interactive context, it's main focus is to provide
+an intuitive interface on which other packages can be developed
+(e.g. [*trendbreaker*](https://github.com/reconhub/trendbreaker)).
+
+# Main features
+
+- **Model specification:** Interfaces to common models through intuitive
+  functions; `lm_model()`, `glm_model()`, `glm_nb_model` and `brms_model`*.
+
+- **Model fitting and prediction:** Once specified, models can be fit to data
+  and generate confidence and prediction intervals for future data using `fit()`
+  and `predict()`.
+
+\* &nbsp; Requires [brms](https://CRAN.R-project.org/package=brms)
+
+# Example usage
+
+## An individual model 
+```{r}
+library(outbreaks)  # for data
+library(trending)   # for trend fitting
+library(dplyr, warn.conflicts = FALSE)  # for data manipulation
+
+# load data
+data(covid19_england_nhscalls_2020)
+
+# define a model
+model  <- glm_nb_model(count ~ day + weekday)
+
+# select 6 weeks of data (from a period when the prevalence was decreasing)
+last_date <- as.Date("2020-05-28")
+first_date <- last_date - 8*7
+pathways_recent <-
+  covid19_england_nhscalls_2020 %>%
+  filter(date >= first_date, date <= last_date) %>%
+  group_by(date, day, weekday) %>%
+  summarise(count = sum(count), .groups = "drop")
+
+# split data for fitting and prediction
+dat <-
+  pathways_recent %>%
+  group_by(date <= first_date + 6*7) %>%
+  group_split()
+
+fitting_data <- dat[[2]]
+pred_data <- select(dat[[1]], date, day, weekday)
+
+fitted_model <- fit(model, fitting_data)
+
+# default
+fitted_model %>% 
+  predict(pred_data) %>%
+  glimpse()
+
+# without prediction intervals
+fitted_model %>% 
+  predict(pred_data, add_pi = FALSE) %>% 
+  glimpse()
+
+# without uncertainty
+fitted_model %>% 
+  predict(pred_data, uncertainty = FALSE) %>% 
+  glimpse()
+```
+
+## Multiple models
+Trending makes use of [purrr::safely()] to handle lists of models.  In this
+situation the fitted output wil be of class [`trending_model_fit_list`] which
+is a list with components result and error. If an error occurred, error is an 
+error object and result has a NULL value (otherwise). If the model does not
+error then result is the corresponding model output and the error entry will be
+NULL.
+
+```{r}
+models  <- list(
+  simple = lm_model(count ~ day),
+  glm_poisson = glm_model(count ~ day, family = "poisson"),
+  glm_negbin = glm_nb_model(count ~ day + weekday),
+  will_error = glm_nb_model(count ~ day + nonexistant)
+)
+
+models %>%
+  fit(fitting_data) %>%
+  glimpse()
+```
+
+Similarly [`trending_model_fit_list`] objects can then be used with [predict]
+```{r}
+models %>%
+  fit(fitting_data) %>% 
+  predict(pred_data) %>% 
+  glimpse()
+```
+
+
