@@ -58,13 +58,20 @@ models  <- list(
   will_error = glm_nb_model(count ~ day + nonexistant)
 )
 
-models %>%
-  fit(fitting_data) %>%
-  glimpse()
+res <- models %>%
+  fit(fitting_data)
+
+res
+
+res %>% glimpse()
+
 
 ## -----------------------------------------------------------------------------
-models %>%
+res <- models %>%
   fit(fitting_data) %>% 
-  predict(pred_data) %>% 
-  glimpse()
+  predict(pred_data)
+
+res
+
+res %>% glimpse()
 

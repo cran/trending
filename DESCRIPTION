@@ -1,6 +1,6 @@
 Package: trending
 Title: Model Temporal Trends
-Version: 0.0.1.0
+Version: 0.0.2
 Authors@R: 
     c(
       person(
@@ -32,15 +32,15 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
-Imports: MASS, stats, utils
-Suggests: brms, ciTools, covr, dplyr, ggplot2, knitr, outbreaks,
-        patchwork, rmarkdown, testthat
+Imports: MASS, stats, utils, tibble, vctrs, dplyr
+Suggests: brms, ciTools, covr, ggplot2, knitr, outbreaks, patchwork,
+        rmarkdown, testthat
 VignetteBuilder: knitr
 NeedsCompilation: no
-Packaged: 2020-10-12 11:49:57 UTC; tim
+Packaged: 2020-11-18 13:26:16 UTC; tim
 Author: Dirk Schumacher [aut],
   Thibaut Jombart [aut],
   Tim Taylor [ctb, cre] (<https://orcid.org/0000-0002-8587-7113>)
 Maintainer: Tim Taylor <tim.taylor@hiddenelephants.co.uk>
 Repository: CRAN
-Date/Publication: 2020-10-19 14:10:02 UTC
+Date/Publication: 2020-11-18 20:30:02 UTC
