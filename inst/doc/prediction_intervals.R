@@ -28,11 +28,11 @@ head(dat1)
 # add intervals with trending (no uncertainty in parameters)
 poisson_model <- glm_model(y ~ x, family = "poisson")
 fitted_model <- fit(poisson_model, dat)
-dat2 <- predict(fitted_model, uncertain = FALSE, alpha = 0.1)
+dat2 <- predict(fitted_model, simulate_pi = FALSE, uncertain = FALSE, alpha = 0.1)
 head(dat2)
 
 # add intervals with trending (uncertainty in parameters)
-dat3 <- predict(fitted_model, alpha = 0.1)
+dat3 <- predict(fitted_model, simulate_pi = FALSE, alpha = 0.1)
 head(dat3)
 
 # plots
@@ -72,11 +72,11 @@ head(dat1)
 # add intervals with trending (no uncertainty in parameters)
 quasipoisson_model <- glm_model(y ~ x, family = quasipoisson(link = "log"))
 fitted_model <- fit(quasipoisson_model, dat)
-dat2 <- predict(fitted_model, uncertain = FALSE, alpha = 0.1)
+dat2 <- predict(fitted_model, simulate_pi = FALSE,  uncertain = FALSE, alpha = 0.1)
 head(dat2)
 
 # add intervals with trending (uncertainty in parameters)
-dat3 <- predict(fitted_model, alpha = 0.1)
+dat3 <- predict(fitted_model, simulate_pi = FALSE, alpha = 0.1)
 head(dat3)
 
 # plots

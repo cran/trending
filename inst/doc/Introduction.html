@@ -43,45 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 </script>
-<style type="text/css">
-a.anchor-section {margin-left: 10px; visibility: hidden; color: inherit;}
-a.anchor-section::before {content: '#';}
-.hasAnchor:hover a.anchor-section {visibility: visible;}
-</style>
-<script>// Anchor sections v1.0 written by Atsushi Yasumoto on Oct 3rd, 2020.
-document.addEventListener('DOMContentLoaded', function() {
-  // Do nothing if AnchorJS is used
-  if (typeof window.anchors === 'object' && anchors.hasOwnProperty('hasAnchorJSLink')) {
-    return;
-  }
-
-  const h = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-
-  // Do nothing if sections are already anchored
-  if (Array.from(h).some(x => x.classList.contains('hasAnchor'))) {
-    return null;
-  }
-
-  // Use section id when pandoc runs with --section-divs
-  const section_id = function(x) {
-    return ((x.classList.contains('section') || (x.tagName === 'SECTION'))
-            ? x.id : '');
-  };
-
-  // Add anchors
-  h.forEach(function(x) {
-    const id = x.id || section_id(x.parentElement);
-    if (id === '') {
-      return null;
-    }
-    let anchor = document.createElement('a');
-    anchor.href = '#' + id;
-    anchor.classList = ['anchor-section'];
-    x.classList.add('hasAnchor');
-    x.appendChild(anchor);
-  });
-});
-</script>
 
 <style type="text/css">
   code{white-space: pre-wrap;}
@@ -93,7 +54,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </style>
 
 
-<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
 pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
@@ -180,6 +148,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   }
 })();
 </script>
+
 
 
 
@@ -428,14 +397,14 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb1-34"><a href="#cb1-34" aria-hidden="true"></a><span class="st">  </span><span class="kw">glimpse</span>()</span>
 <span id="cb1-35"><a href="#cb1-35" aria-hidden="true"></a><span class="co">#&gt; Rows: 14</span></span>
 <span id="cb1-36"><a href="#cb1-36" aria-hidden="true"></a><span class="co">#&gt; Columns: 8</span></span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19,…</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19, …</span></span>
 <span id="cb1-38"><a href="#cb1-38" aria-hidden="true"></a><span class="co">#&gt; $ day      &lt;int&gt; 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_o…</span></span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658…</span></span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365…</span></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065…</span></span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true"></a><span class="co">#&gt; $ lower_pi &lt;dbl&gt; 8107, 6618, 6373, 8363, 6962, 6701, 6450, 6208, 5079, 4889, …</span></span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true"></a><span class="co">#&gt; $ upper_pi &lt;dbl&gt; 18870, 16223, 15714, 21784, 16638, 16124, 15626, 15145, 1299…</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_of…</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658.…</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365,…</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065.…</span></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true"></a><span class="co">#&gt; $ lower_pi &lt;dbl&gt; 8750, 7309, 7152, 9534, 7663, 7169, 7202, 6932, 5656, 5563, 7…</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true"></a><span class="co">#&gt; $ upper_pi &lt;dbl&gt; 17091, 14588, 14101, 19191, 15076, 14380, 14191, 13642, 11453…</span></span>
 <span id="cb1-45"><a href="#cb1-45" aria-hidden="true"></a></span>
 <span id="cb1-46"><a href="#cb1-46" aria-hidden="true"></a><span class="co"># without prediction intervals</span></span>
 <span id="cb1-47"><a href="#cb1-47" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
@@ -443,12 +412,12 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb1-49"><a href="#cb1-49" aria-hidden="true"></a><span class="st">  </span><span class="kw">glimpse</span>()</span>
 <span id="cb1-50"><a href="#cb1-50" aria-hidden="true"></a><span class="co">#&gt; Rows: 14</span></span>
 <span id="cb1-51"><a href="#cb1-51" aria-hidden="true"></a><span class="co">#&gt; Columns: 6</span></span>
-<span id="cb1-52"><a href="#cb1-52" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19,…</span></span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19, …</span></span>
 <span id="cb1-53"><a href="#cb1-53" aria-hidden="true"></a><span class="co">#&gt; $ day      &lt;int&gt; 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71</span></span>
-<span id="cb1-54"><a href="#cb1-54" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_o…</span></span>
-<span id="cb1-55"><a href="#cb1-55" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658…</span></span>
-<span id="cb1-56"><a href="#cb1-56" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365…</span></span>
-<span id="cb1-57"><a href="#cb1-57" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065…</span></span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_of…</span></span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658.…</span></span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365,…</span></span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065.…</span></span>
 <span id="cb1-58"><a href="#cb1-58" aria-hidden="true"></a></span>
 <span id="cb1-59"><a href="#cb1-59" aria-hidden="true"></a><span class="co"># without uncertainty</span></span>
 <span id="cb1-60"><a href="#cb1-60" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
@@ -456,14 +425,29 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb1-62"><a href="#cb1-62" aria-hidden="true"></a><span class="st">  </span><span class="kw">glimpse</span>()</span>
 <span id="cb1-63"><a href="#cb1-63" aria-hidden="true"></a><span class="co">#&gt; Rows: 14</span></span>
 <span id="cb1-64"><a href="#cb1-64" aria-hidden="true"></a><span class="co">#&gt; Columns: 8</span></span>
-<span id="cb1-65"><a href="#cb1-65" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19,…</span></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19, …</span></span>
 <span id="cb1-66"><a href="#cb1-66" aria-hidden="true"></a><span class="co">#&gt; $ day      &lt;int&gt; 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71</span></span>
-<span id="cb1-67"><a href="#cb1-67" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_o…</span></span>
-<span id="cb1-68"><a href="#cb1-68" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658…</span></span>
-<span id="cb1-69"><a href="#cb1-69" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365…</span></span>
-<span id="cb1-70"><a href="#cb1-70" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065…</span></span>
-<span id="cb1-71"><a href="#cb1-71" aria-hidden="true"></a><span class="co">#&gt; $ lower_pi &lt;dbl&gt; 8107, 6618, 6373, 8363, 6962, 6701, 6450, 6208, 5079, 4889, …</span></span>
-<span id="cb1-72"><a href="#cb1-72" aria-hidden="true"></a><span class="co">#&gt; $ upper_pi &lt;dbl&gt; 18870, 16223, 15714, 21784, 16638, 16124, 15626, 15145, 1299…</span></span></code></pre></div>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_of…</span></span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658.…</span></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365,…</span></span>
+<span id="cb1-70"><a href="#cb1-70" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065.…</span></span>
+<span id="cb1-71"><a href="#cb1-71" aria-hidden="true"></a><span class="co">#&gt; $ lower_pi &lt;dbl&gt; 9070, 7401, 7198, 9615, 7675, 7489, 7136, 6847, 5702, 5393, 7…</span></span>
+<span id="cb1-72"><a href="#cb1-72" aria-hidden="true"></a><span class="co">#&gt; $ upper_pi &lt;dbl&gt; 17184, 14557, 14030, 18996, 15255, 14584, 14255, 13568, 11433…</span></span>
+<span id="cb1-73"><a href="#cb1-73" aria-hidden="true"></a></span>
+<span id="cb1-74"><a href="#cb1-74" aria-hidden="true"></a><span class="co"># non-bootstraped (parametric) prediction intervals</span></span>
+<span id="cb1-75"><a href="#cb1-75" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb1-76"><a href="#cb1-76" aria-hidden="true"></a><span class="st">  </span><span class="kw">predict</span>(pred_data, <span class="dt">simulate_pi =</span> <span class="ot">FALSE</span>) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb1-77"><a href="#cb1-77" aria-hidden="true"></a><span class="st">  </span><span class="kw">glimpse</span>()</span>
+<span id="cb1-78"><a href="#cb1-78" aria-hidden="true"></a><span class="co">#&gt; Rows: 14</span></span>
+<span id="cb1-79"><a href="#cb1-79" aria-hidden="true"></a><span class="co">#&gt; Columns: 8</span></span>
+<span id="cb1-80"><a href="#cb1-80" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19, …</span></span>
+<span id="cb1-81"><a href="#cb1-81" aria-hidden="true"></a><span class="co">#&gt; $ day      &lt;int&gt; 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71</span></span>
+<span id="cb1-82"><a href="#cb1-82" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_of…</span></span>
+<span id="cb1-83"><a href="#cb1-83" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658.…</span></span>
+<span id="cb1-84"><a href="#cb1-84" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365,…</span></span>
+<span id="cb1-85"><a href="#cb1-85" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065.…</span></span>
+<span id="cb1-86"><a href="#cb1-86" aria-hidden="true"></a><span class="co">#&gt; $ lower_pi &lt;dbl&gt; 8107, 6618, 6373, 8363, 6962, 6701, 6450, 6208, 5079, 4889, 6…</span></span>
+<span id="cb1-87"><a href="#cb1-87" aria-hidden="true"></a><span class="co">#&gt; $ upper_pi &lt;dbl&gt; 18870, 16223, 15714, 21784, 16638, 16124, 15626, 15145, 12992…</span></span></code></pre></div>
 </div>
 <div id="multiple-models" class="section level2">
 <h2>Multiple models</h2>
@@ -480,21 +464,21 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a></span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>res</span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a><span class="co">#&gt; # A tibble: 4 x 5</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a><span class="co">#&gt;   model_name  data              fitted_model   fitting_warnings fitting_errors</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;list&gt;            &lt;named list&gt;   &lt;named list&gt;     &lt;named list&gt;  </span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a><span class="co">#&gt; 1 simple      &lt;tibble [43 × 5]&gt; &lt;trndng__ [2]&gt; &lt;NULL&gt;           &lt;NULL&gt;        </span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a><span class="co">#&gt; 2 glm_poisson &lt;tibble [43 × 5]&gt; &lt;trndng__ [2]&gt; &lt;NULL&gt;           &lt;NULL&gt;        </span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a><span class="co">#&gt; 3 glm_negbin  &lt;tibble [43 × 5]&gt; &lt;trndng__ [2]&gt; &lt;NULL&gt;           &lt;NULL&gt;        </span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a><span class="co">#&gt; 4 will_error  &lt;tibble [43 × 5]&gt; &lt;NULL&gt;         &lt;NULL&gt;           &lt;chr [1]&gt;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a><span class="co">#&gt;   model_name  data                 fitted_model  fitting_warnings fitting_errors</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;list&gt;               &lt;named list&gt;  &lt;named list&gt;     &lt;named list&gt;  </span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a><span class="co">#&gt; 1 simple      &lt;tibble[,5] [43 × 5… &lt;trndng__ [2… &lt;NULL&gt;           &lt;NULL&gt;        </span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a><span class="co">#&gt; 2 glm_poisson &lt;tibble[,5] [43 × 5… &lt;trndng__ [2… &lt;NULL&gt;           &lt;NULL&gt;        </span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a><span class="co">#&gt; 3 glm_negbin  &lt;tibble[,5] [43 × 5… &lt;trndng__ [2… &lt;NULL&gt;           &lt;NULL&gt;        </span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a><span class="co">#&gt; 4 will_error  &lt;tibble[,5] [43 × 5… &lt;NULL&gt;        &lt;NULL&gt;           &lt;chr [1]&gt;</span></span>
 <span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a></span>
 <span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a>res <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">glimpse</span>()</span>
 <span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a><span class="co">#&gt; Rows: 4</span></span>
 <span id="cb2-22"><a href="#cb2-22" aria-hidden="true"></a><span class="co">#&gt; Columns: 5</span></span>
 <span id="cb2-23"><a href="#cb2-23" aria-hidden="true"></a><span class="co">#&gt; $ model_name       &lt;chr&gt; &quot;simple&quot;, &quot;glm_poisson&quot;, &quot;glm_negbin&quot;, &quot;will_error&quot;</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true"></a><span class="co">#&gt; $ data             &lt;list&gt; [&lt;tbl_df[43 x 5]&gt;, &lt;tbl_df[43 x 5]&gt;, &lt;tbl_df[43 x 5…</span></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true"></a><span class="co">#&gt; $ fitted_model     &lt;named list&gt; [[&lt;69201.584, -1092.913, 19109.1089, 11650.02…</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true"></a><span class="co">#&gt; $ fitting_warnings &lt;named list&gt; [NULL, NULL, NULL, NULL]</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true"></a><span class="co">#&gt; $ fitting_errors   &lt;named list&gt; [NULL, NULL, NULL, &quot;object &#39;nonexistant&#39; not …</span></span></code></pre></div>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true"></a><span class="co">#&gt; $ data             &lt;list&gt; [&lt;tbl_df[43 x 5]&gt;], [&lt;tbl_df[43 x 5]&gt;], [&lt;tbl_df[43 x…</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true"></a><span class="co">#&gt; $ fitted_model     &lt;named list&gt; [[69201.584, -1092.913, 19109.1089, 11650.0217, 1789…</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true"></a><span class="co">#&gt; $ fitting_warnings &lt;named list&gt; &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true"></a><span class="co">#&gt; $ fitting_errors   &lt;named list&gt; &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;, &quot;object &#39;nonexistant&#39; …</span></span></code></pre></div>
 <p><code>trending_model_fit_list</code> objects can then be used with <code>predict()</code> which similarly captures warnings and errors and returns the model predictions in a column called <strong>output</strong>.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>res &lt;-<span class="st"> </span>models <span class="op">%&gt;%</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">fit</span>(fitting_data) <span class="op">%&gt;%</span><span class="st"> </span></span>
@@ -502,26 +486,26 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a></span>
 <span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>res</span>
 <span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a><span class="co">#&gt; # A tibble: 4 x 8</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a><span class="co">#&gt;   model_name data  fitted_model fitting_warnings fitting_errors output</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a><span class="co">#&gt;   &lt;chr&gt;      &lt;lis&gt; &lt;named list&gt; &lt;named list&gt;     &lt;named list&gt;   &lt;name&gt;</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a><span class="co">#&gt; 1 simple     &lt;tib… &lt;trndng__ [… &lt;NULL&gt;           &lt;NULL&gt;         &lt;df[,…</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a><span class="co">#&gt; 2 glm_poiss… &lt;tib… &lt;trndng__ [… &lt;NULL&gt;           &lt;NULL&gt;         &lt;df[,…</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a><span class="co">#&gt; 3 glm_negbin &lt;tib… &lt;trndng__ [… &lt;NULL&gt;           &lt;NULL&gt;         &lt;df[,…</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a><span class="co">#&gt; 4 will_error &lt;tib… &lt;NULL&gt;       &lt;NULL&gt;           &lt;chr [1]&gt;      &lt;NULL&gt;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a><span class="co">#&gt;   model_name  data        fitted_model fitting_warnings fitting_errors output   </span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;list&gt;      &lt;named list&gt; &lt;named list&gt;     &lt;named list&gt;   &lt;named l&gt;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a><span class="co">#&gt; 1 simple      &lt;tibble[,5… &lt;trndng__ [… &lt;NULL&gt;           &lt;NULL&gt;         &lt;df[,8] …</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a><span class="co">#&gt; 2 glm_poisson &lt;tibble[,5… &lt;trndng__ [… &lt;NULL&gt;           &lt;NULL&gt;         &lt;df[,8] …</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a><span class="co">#&gt; 3 glm_negbin  &lt;tibble[,5… &lt;trndng__ [… &lt;NULL&gt;           &lt;NULL&gt;         &lt;df[,8] …</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a><span class="co">#&gt; 4 will_error  &lt;tibble[,5… &lt;NULL&gt;       &lt;NULL&gt;           &lt;chr [1]&gt;      &lt;NULL&gt;   </span></span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a><span class="co">#&gt; # … with 2 more variables: prediction_warnings &lt;named list&gt;,</span></span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a><span class="co">#&gt; #   prediction_errors &lt;named list&gt;</span></span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a></span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true"></a>res <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">glimpse</span>()</span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true"></a><span class="co">#&gt; Rows: 4</span></span>
 <span id="cb3-18"><a href="#cb3-18" aria-hidden="true"></a><span class="co">#&gt; Columns: 8</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true"></a><span class="co">#&gt; $ model_name          &lt;chr&gt; &quot;simple&quot;, &quot;glm_poisson&quot;, &quot;glm_negbin&quot;, &quot;will_erro…</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true"></a><span class="co">#&gt; $ data                &lt;list&gt; [&lt;tbl_df[43 x 5]&gt;, &lt;tbl_df[43 x 5]&gt;, &lt;tbl_df[43 …</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true"></a><span class="co">#&gt; $ fitted_model        &lt;named list&gt; [[&lt;69201.584, -1092.913, 19109.1089, 11650…</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true"></a><span class="co">#&gt; $ fitting_warnings    &lt;named list&gt; [NULL, NULL, NULL, NULL]</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true"></a><span class="co">#&gt; $ fitting_errors      &lt;named list&gt; [NULL, NULL, NULL, &quot;object &#39;nonexistant&#39; n…</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true"></a><span class="co">#&gt; $ output              &lt;named list&gt; [&lt;data.frame[14 x 8]&gt;, &lt;data.frame[14 x 8]…</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true"></a><span class="co">#&gt; $ prediction_warnings &lt;named list&gt; [NULL, NULL, NULL, NULL]</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true"></a><span class="co">#&gt; $ prediction_errors   &lt;named list&gt; [NULL, NULL, NULL, &quot;no applicable method f…</span></span></code></pre></div>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true"></a><span class="co">#&gt; $ model_name          &lt;chr&gt; &quot;simple&quot;, &quot;glm_poisson&quot;, &quot;glm_negbin&quot;, &quot;will_error&quot;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true"></a><span class="co">#&gt; $ data                &lt;list&gt; [&lt;tbl_df[43 x 5]&gt;], [&lt;tbl_df[43 x 5]&gt;], [&lt;tbl_df[4…</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true"></a><span class="co">#&gt; $ fitted_model        &lt;named list&gt; [[69201.584, -1092.913, 19109.1089, 11650.0217, 1…</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true"></a><span class="co">#&gt; $ fitting_warnings    &lt;named list&gt; &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true"></a><span class="co">#&gt; $ fitting_errors      &lt;named list&gt; &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;, &quot;object &#39;nonexistan…</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true"></a><span class="co">#&gt; $ output              &lt;named list&gt; [&lt;data.frame[14 x 8]&gt;], [&lt;data.frame[14 x 8…</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true"></a><span class="co">#&gt; $ prediction_warnings &lt;named list&gt; &lt;NULL&gt;, &quot;The response is not continuous, so…</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true"></a><span class="co">#&gt; $ prediction_errors   &lt;named list&gt; &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;, &quot;no applicable meth…</span></span></code></pre></div>
 </div>
 </div>
 

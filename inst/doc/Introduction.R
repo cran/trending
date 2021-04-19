@@ -50,6 +50,11 @@ fitted_model %>%
   predict(pred_data, uncertainty = FALSE) %>% 
   glimpse()
 
+# non-bootstraped (parametric) prediction intervals
+fitted_model %>% 
+  predict(pred_data, simulate_pi = FALSE) %>% 
+  glimpse()
+
 ## -----------------------------------------------------------------------------
 models  <- list(
   simple = lm_model(count ~ day),
