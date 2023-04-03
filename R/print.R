@@ -1,22 +1,63 @@
-format.trending_model <- function(x, ...) {
-  paste0("Untrained trending model type: ", x[["model_class"]])
-}
-
-
-print.trending_model <- function(x, ...) {
-  cat(format(x))
-}
-
-
-format.trending_model_fit <- function(x, ...) {
-  tmp <- append(
-    "Fitted trending model:",
-    utils::capture.output(x$fitted_model)
+#' @export
+format.trending_fit_tbl <- function(x, ...) {
+  header <- sprintf(
+    "<trending_fit_tbl> %s x %s",
+    formatC(nrow(x), big.mark = ","),
+    formatC(ncol(x), big.mark = ",")
   )
-  paste(tmp, collapse = "\n")
+  header <- pillar::style_subtle(header)
+  body <- format(tibble::as_tibble(x, ...))[-1]
+  c(header, body)
 }
 
+# -------------------------------------------------------------------------
 
-print.trending_model_fit <- function(x, ...) {
-  cat(format(x))
+#' @export
+print.trending_fit_tbl <- function(x, ...) {
+  writeLines(format(x, ...))
+  invisible(x)
+}
+
+# -------------------------------------------------------------------------
+
+#' @export
+format.trending_predict_tbl <- function(x, ...) {
+  header <- sprintf(
+    "<trending_predict_tbl> %s x %s",
+    formatC(nrow(x), big.mark = ","),
+    formatC(ncol(x), big.mark = ",")
+  )
+  header <- pillar::style_subtle(header)
+  body <- format(tibble::as_tibble(x, ...))[-1]
+  c(header, body)
+}
+
+# -------------------------------------------------------------------------
+
+#' @export
+print.trending_predict_tbl <- function(x, ...) {
+  writeLines(format(x, ...))
+  invisible(x)
+}
+
+# -------------------------------------------------------------------------
+
+#' @export
+print.trending_prediction <- function(x, ...) {
+  writeLines(format(x, ...))
+  invisible(x)
+}
+
+# -------------------------------------------------------------------------
+
+#' @export
+format.trending_prediction <- function(x, ...) {
+  header <- sprintf(
+    "<trending_prediction> %s x %s",
+    formatC(nrow(x), big.mark = ","),
+    formatC(ncol(x), big.mark = ",")
+  )
+  header <- pillar::style_subtle(header)
+  body <- format(tibble::as_tibble(x, ...))[-1]
+  c(header, body)
 }

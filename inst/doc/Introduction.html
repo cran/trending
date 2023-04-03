@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </style>
 
 
+
 <style type="text/css">
   code {
     white-space: pre;
@@ -134,13 +135,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   for (var i = 0; i < sheets.length; i++) {
     if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
     try { var rules = sheets[i].cssRules; } catch (e) { continue; }
-    for (var j = 0; j < rules.length; j++) {
+    var j = 0;
+    while (j < rules.length) {
       var rule = rules[j];
       // check if there is a div.sourceCode rule
-      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
       var style = rule.style.cssText;
       // check if color or background-color is set
-      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
       // replace div.sourceCode by a pre.sourceCode rule
       sheets[i].deleteRule(j);
       sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
@@ -354,158 +362,296 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 <ul>
 <li><p><strong>Model specification:</strong> Interfaces to common models through intuitive functions; <code>lm_model()</code>, <code>glm_model()</code>, <code>glm_nb_model</code> and <code>brms_model</code>*.</p></li>
 <li><p><strong>Model fitting and prediction:</strong> Once specified, models can be fit to data and generate confidence and prediction intervals for future data using <code>fit()</code> and <code>predict()</code>.</p></li>
+<li><p><strong>Error and warning catching:</strong> The provided methods for <code>fit</code> and <code>predict</code> catch all warnings and errors, returning the output and these captured values in a list.</p></li>
 </ul>
 <p>*   Requires <a href="https://CRAN.R-project.org/package=brms">brms</a></p>
 </div>
 <div id="example-usage" class="section level1">
 <h1>Example usage</h1>
-<div id="an-individual-model" class="section level2">
-<h2>An individual model</h2>
+<div id="setup" class="section level2">
+<h2>Setup</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">library</span>(outbreaks)  <span class="co"># for data</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a><span class="kw">library</span>(trending)   <span class="co"># for trend fitting</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">library</span>(dplyr, <span class="dt">warn.conflicts =</span> <span class="ot">FALSE</span>)  <span class="co"># for data manipulation</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a><span class="kw">library</span>(dplyr)      <span class="co"># for data manipulation</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a></span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a><span class="co"># load data</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a><span class="kw">data</span>(covid19_england_nhscalls_<span class="dv">2020</span>)</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="co"># define a model</span></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>model  &lt;-<span class="st"> </span><span class="kw">glm_nb_model</span>(count <span class="op">~</span><span class="st"> </span>day <span class="op">+</span><span class="st"> </span>weekday)</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a><span class="co"># select 6 weeks of data (from a period when the prevalence was decreasing)</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a>last_date &lt;-<span class="st"> </span><span class="kw">as.Date</span>(<span class="st">&quot;2020-05-28&quot;</span>)</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a>first_date &lt;-<span class="st"> </span>last_date <span class="op">-</span><span class="st"> </span><span class="dv">8</span><span class="op">*</span><span class="dv">7</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a>pathways_recent &lt;-</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a><span class="st">  </span>covid19_england_nhscalls_<span class="dv">2020</span> <span class="op">%&gt;%</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(date <span class="op">&gt;=</span><span class="st"> </span>first_date, date <span class="op">&lt;=</span><span class="st"> </span>last_date) <span class="op">%&gt;%</span></span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a><span class="st">  </span><span class="kw">group_by</span>(date, day, weekday) <span class="op">%&gt;%</span></span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">count =</span> <span class="kw">sum</span>(count), <span class="dt">.groups =</span> <span class="st">&quot;drop&quot;</span>)</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a><span class="co"># split data for fitting and prediction</span></span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a>dat &lt;-</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a><span class="st">  </span>pathways_recent <span class="op">%&gt;%</span></span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a><span class="st">  </span><span class="kw">group_by</span>(date <span class="op">&lt;=</span><span class="st"> </span>first_date <span class="op">+</span><span class="st"> </span><span class="dv">6</span><span class="op">*</span><span class="dv">7</span>) <span class="op">%&gt;%</span></span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a><span class="st">  </span><span class="kw">group_split</span>()</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true"></a></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true"></a>fitting_data &lt;-<span class="st"> </span>dat[[<span class="dv">2</span>]]</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true"></a>pred_data &lt;-<span class="st"> </span><span class="kw">select</span>(dat[[<span class="dv">1</span>]], date, day, weekday)</span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true"></a></span>
-<span id="cb1-29"><a href="#cb1-29" aria-hidden="true"></a>fitted_model &lt;-<span class="st"> </span><span class="kw">fit</span>(model, fitting_data)</span>
-<span id="cb1-30"><a href="#cb1-30" aria-hidden="true"></a></span>
-<span id="cb1-31"><a href="#cb1-31" aria-hidden="true"></a><span class="co"># default</span></span>
-<span id="cb1-32"><a href="#cb1-32" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb1-33"><a href="#cb1-33" aria-hidden="true"></a><span class="st">  </span><span class="kw">predict</span>(pred_data) <span class="op">%&gt;%</span></span>
-<span id="cb1-34"><a href="#cb1-34" aria-hidden="true"></a><span class="st">  </span><span class="kw">glimpse</span>()</span>
-<span id="cb1-35"><a href="#cb1-35" aria-hidden="true"></a><span class="co">#&gt; Rows: 14</span></span>
-<span id="cb1-36"><a href="#cb1-36" aria-hidden="true"></a><span class="co">#&gt; Columns: 8</span></span>
-<span id="cb1-37"><a href="#cb1-37" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19, …</span></span>
-<span id="cb1-38"><a href="#cb1-38" aria-hidden="true"></a><span class="co">#&gt; $ day      &lt;int&gt; 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71</span></span>
-<span id="cb1-39"><a href="#cb1-39" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_of…</span></span>
-<span id="cb1-40"><a href="#cb1-40" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658.…</span></span>
-<span id="cb1-41"><a href="#cb1-41" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365,…</span></span>
-<span id="cb1-42"><a href="#cb1-42" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065.…</span></span>
-<span id="cb1-43"><a href="#cb1-43" aria-hidden="true"></a><span class="co">#&gt; $ lower_pi &lt;dbl&gt; 8750, 7309, 7152, 9534, 7663, 7169, 7202, 6932, 5656, 5563, 7…</span></span>
-<span id="cb1-44"><a href="#cb1-44" aria-hidden="true"></a><span class="co">#&gt; $ upper_pi &lt;dbl&gt; 17091, 14588, 14101, 19191, 15076, 14380, 14191, 13642, 11453…</span></span>
-<span id="cb1-45"><a href="#cb1-45" aria-hidden="true"></a></span>
-<span id="cb1-46"><a href="#cb1-46" aria-hidden="true"></a><span class="co"># without prediction intervals</span></span>
-<span id="cb1-47"><a href="#cb1-47" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb1-48"><a href="#cb1-48" aria-hidden="true"></a><span class="st">  </span><span class="kw">predict</span>(pred_data, <span class="dt">add_pi =</span> <span class="ot">FALSE</span>) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb1-49"><a href="#cb1-49" aria-hidden="true"></a><span class="st">  </span><span class="kw">glimpse</span>()</span>
-<span id="cb1-50"><a href="#cb1-50" aria-hidden="true"></a><span class="co">#&gt; Rows: 14</span></span>
-<span id="cb1-51"><a href="#cb1-51" aria-hidden="true"></a><span class="co">#&gt; Columns: 6</span></span>
-<span id="cb1-52"><a href="#cb1-52" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19, …</span></span>
-<span id="cb1-53"><a href="#cb1-53" aria-hidden="true"></a><span class="co">#&gt; $ day      &lt;int&gt; 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71</span></span>
-<span id="cb1-54"><a href="#cb1-54" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_of…</span></span>
-<span id="cb1-55"><a href="#cb1-55" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658.…</span></span>
-<span id="cb1-56"><a href="#cb1-56" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365,…</span></span>
-<span id="cb1-57"><a href="#cb1-57" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065.…</span></span>
-<span id="cb1-58"><a href="#cb1-58" aria-hidden="true"></a></span>
-<span id="cb1-59"><a href="#cb1-59" aria-hidden="true"></a><span class="co"># without uncertainty</span></span>
-<span id="cb1-60"><a href="#cb1-60" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb1-61"><a href="#cb1-61" aria-hidden="true"></a><span class="st">  </span><span class="kw">predict</span>(pred_data, <span class="dt">uncertainty =</span> <span class="ot">FALSE</span>) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb1-62"><a href="#cb1-62" aria-hidden="true"></a><span class="st">  </span><span class="kw">glimpse</span>()</span>
-<span id="cb1-63"><a href="#cb1-63" aria-hidden="true"></a><span class="co">#&gt; Rows: 14</span></span>
-<span id="cb1-64"><a href="#cb1-64" aria-hidden="true"></a><span class="co">#&gt; Columns: 8</span></span>
-<span id="cb1-65"><a href="#cb1-65" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19, …</span></span>
-<span id="cb1-66"><a href="#cb1-66" aria-hidden="true"></a><span class="co">#&gt; $ day      &lt;int&gt; 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71</span></span>
-<span id="cb1-67"><a href="#cb1-67" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_of…</span></span>
-<span id="cb1-68"><a href="#cb1-68" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658.…</span></span>
-<span id="cb1-69"><a href="#cb1-69" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365,…</span></span>
-<span id="cb1-70"><a href="#cb1-70" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065.…</span></span>
-<span id="cb1-71"><a href="#cb1-71" aria-hidden="true"></a><span class="co">#&gt; $ lower_pi &lt;dbl&gt; 9070, 7401, 7198, 9615, 7675, 7489, 7136, 6847, 5702, 5393, 7…</span></span>
-<span id="cb1-72"><a href="#cb1-72" aria-hidden="true"></a><span class="co">#&gt; $ upper_pi &lt;dbl&gt; 17184, 14557, 14030, 18996, 15255, 14584, 14255, 13568, 11433…</span></span>
-<span id="cb1-73"><a href="#cb1-73" aria-hidden="true"></a></span>
-<span id="cb1-74"><a href="#cb1-74" aria-hidden="true"></a><span class="co"># non-bootstraped (parametric) prediction intervals</span></span>
-<span id="cb1-75"><a href="#cb1-75" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb1-76"><a href="#cb1-76" aria-hidden="true"></a><span class="st">  </span><span class="kw">predict</span>(pred_data, <span class="dt">simulate_pi =</span> <span class="ot">FALSE</span>) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb1-77"><a href="#cb1-77" aria-hidden="true"></a><span class="st">  </span><span class="kw">glimpse</span>()</span>
-<span id="cb1-78"><a href="#cb1-78" aria-hidden="true"></a><span class="co">#&gt; Rows: 14</span></span>
-<span id="cb1-79"><a href="#cb1-79" aria-hidden="true"></a><span class="co">#&gt; Columns: 8</span></span>
-<span id="cb1-80"><a href="#cb1-80" aria-hidden="true"></a><span class="co">#&gt; $ date     &lt;date&gt; 2020-05-15, 2020-05-16, 2020-05-17, 2020-05-18, 2020-05-19, …</span></span>
-<span id="cb1-81"><a href="#cb1-81" aria-hidden="true"></a><span class="co">#&gt; $ day      &lt;int&gt; 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71</span></span>
-<span id="cb1-82"><a href="#cb1-82" aria-hidden="true"></a><span class="co">#&gt; $ weekday  &lt;fct&gt; rest_of_week, weekend, weekend, monday, rest_of_week, rest_of…</span></span>
-<span id="cb1-83"><a href="#cb1-83" aria-hidden="true"></a><span class="co">#&gt; $ estimate &lt;dbl&gt; 12682.379, 10624.988, 10261.987, 13839.821, 11036.028, 10658.…</span></span>
-<span id="cb1-84"><a href="#cb1-84" aria-hidden="true"></a><span class="co">#&gt; $ lower_ci &lt;dbl&gt; 11389.734, 9298.983, 8955.560, 11749.030, 9782.389, 9416.365,…</span></span>
-<span id="cb1-85"><a href="#cb1-85" aria-hidden="true"></a><span class="co">#&gt; $ upper_ci &lt;dbl&gt; 14121.729, 12140.078, 11758.995, 16302.677, 12450.323, 12065.…</span></span>
-<span id="cb1-86"><a href="#cb1-86" aria-hidden="true"></a><span class="co">#&gt; $ lower_pi &lt;dbl&gt; 8107, 6618, 6373, 8363, 6962, 6701, 6450, 6208, 5079, 4889, 6…</span></span>
-<span id="cb1-87"><a href="#cb1-87" aria-hidden="true"></a><span class="co">#&gt; $ upper_pi &lt;dbl&gt; 18870, 16223, 15714, 21784, 16638, 16124, 15626, 15145, 12992…</span></span></code></pre></div>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a><span class="co"># select 6 weeks of data (from a period when the prevalence was decreasing)</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true"></a>last_date &lt;-<span class="st"> </span><span class="kw">as.Date</span>(<span class="st">&quot;2020-05-28&quot;</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true"></a>first_date &lt;-<span class="st"> </span>last_date <span class="op">-</span><span class="st"> </span><span class="dv">8</span><span class="op">*</span><span class="dv">7</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true"></a>pathways_recent &lt;-</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true"></a><span class="st">  </span>covid19_england_nhscalls_<span class="dv">2020</span> <span class="op">%&gt;%</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true"></a><span class="st">  </span><span class="kw">filter</span>(date <span class="op">&gt;=</span><span class="st"> </span>first_date, date <span class="op">&lt;=</span><span class="st"> </span>last_date) <span class="op">%&gt;%</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true"></a><span class="st">  </span><span class="kw">group_by</span>(date, day, weekday) <span class="op">%&gt;%</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true"></a><span class="st">  </span><span class="kw">summarise</span>(<span class="dt">count =</span> <span class="kw">sum</span>(count), <span class="dt">.groups =</span> <span class="st">&quot;drop&quot;</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true"></a></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true"></a><span class="co"># split data for fitting and prediction</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true"></a>dat &lt;-</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true"></a><span class="st">  </span>pathways_recent <span class="op">%&gt;%</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true"></a><span class="st">  </span><span class="kw">group_by</span>(date <span class="op">&lt;=</span><span class="st"> </span>first_date <span class="op">+</span><span class="st"> </span><span class="dv">6</span><span class="op">*</span><span class="dv">7</span>) <span class="op">%&gt;%</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true"></a><span class="st">  </span><span class="kw">group_split</span>()</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true"></a>fitting_data &lt;-<span class="st"> </span>dat[[<span class="dv">2</span>]]</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true"></a>pred_data &lt;-<span class="st"> </span><span class="kw">select</span>(dat[[<span class="dv">1</span>]], date, day, weekday)</span></code></pre></div>
+</div>
+<div id="a-succesful-model-fit" class="section level2">
+<h2>A succesful model fit</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>(model  &lt;-<span class="st"> </span><span class="kw">glm_nb_model</span>(count <span class="op">~</span><span class="st"> </span>day <span class="op">+</span><span class="st"> </span>weekday))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a><span class="co">#&gt; Untrained trending model:</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a><span class="co">#&gt;     glm.nb(formula = count ~ day + weekday)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>(fitted_model &lt;-<span class="st"> </span><span class="kw">fit</span>(model, fitting_data))</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_fit_tbl&gt; 1 x 3</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a><span class="co">#&gt;   result   warnings errors</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a><span class="co">#&gt;   &lt;list&gt;   &lt;list&gt;   &lt;list&gt;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a><span class="co">#&gt; 1 &lt;negbin&gt; &lt;NULL&gt;   &lt;NULL&gt;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">get_result</span>()</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a><span class="co">#&gt; [[1]]</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a><span class="co">#&gt; Call:  glm.nb(formula = count ~ day + weekday, data = fitting_data, </span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a><span class="co">#&gt;     init.theta = 39.34595795, link = log)</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a><span class="co">#&gt;    (Intercept)             day   weekdaymonday  weekdayweekend  </span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a><span class="co">#&gt;       11.46417        -0.03476         0.19162        -0.14224  </span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a><span class="co">#&gt; Degrees of Freedom: 42 Total (i.e. Null);  39 Residual</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a><span class="co">#&gt; Null Deviance:       395.9 </span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a><span class="co">#&gt; Residual Deviance: 43.17     AIC: 850.6</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true"></a></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true"></a><span class="co"># default</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true"></a><span class="st">  </span><span class="kw">predict</span>(pred_data) <span class="op">%&gt;%</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true"></a><span class="st">  </span><span class="kw">get_result</span>()</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true"></a><span class="co">#&gt; [[1]]</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_prediction&gt; 14 x 8</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true"></a><span class="co">#&gt;    date         day weekday      estimate lower_ci upper_ci lower_pi upper_pi</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true"></a><span class="co">#&gt;    &lt;date&gt;     &lt;int&gt; &lt;fct&gt;           &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true"></a><span class="co">#&gt;  1 2020-05-15    58 rest_of_week   12682.   11390.   14122.     8107    18870</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true"></a><span class="co">#&gt;  2 2020-05-16    59 weekend        10625.    9299.   12140.     6618    16223</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true"></a><span class="co">#&gt;  3 2020-05-17    60 weekend        10262.    8956.   11759.     6373    15714</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true"></a><span class="co">#&gt;  4 2020-05-18    61 monday         13840.   11749.   16303.     8363    21784</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true"></a><span class="co">#&gt;  5 2020-05-19    62 rest_of_week   11036.    9782.   12450.     6962    16638</span></span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true"></a><span class="co">#&gt;  6 2020-05-20    63 rest_of_week   10659.    9416.   12066.     6701    16124</span></span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true"></a><span class="co">#&gt;  7 2020-05-21    64 rest_of_week   10295.    9064.   11693.     6450    15626</span></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true"></a><span class="co">#&gt;  8 2020-05-22    65 rest_of_week    9943.    8724.   11333.     6208    15145</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true"></a><span class="co">#&gt;  9 2020-05-23    66 weekend         8330.    7138.    9721.     5079    12992</span></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true"></a><span class="co">#&gt; 10 2020-05-24    67 weekend         8045.    6872.    9419.     4889    12588</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true"></a><span class="co">#&gt; 11 2020-05-25    68 monday         10851.    9048.   13012.     6439    17388</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true"></a><span class="co">#&gt; 12 2020-05-26    69 rest_of_week    8652.    7486.   10001.     5326    13366</span></span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true"></a><span class="co">#&gt; 13 2020-05-27    70 rest_of_week    8357.    7204.    9694.     5126    12955</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true"></a><span class="co">#&gt; 14 2020-05-28    71 rest_of_week    8071.    6933.    9396.     4933    12558</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true"></a></span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true"></a><span class="co"># without uncertainty</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true"></a><span class="st">  </span><span class="kw">predict</span>(pred_data, <span class="dt">uncertain =</span> <span class="ot">FALSE</span>) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true"></a><span class="st">  </span><span class="kw">get_result</span>()</span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true"></a><span class="co">#&gt; [[1]]</span></span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_prediction&gt; 14 x 8</span></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true"></a><span class="co">#&gt;    date         day weekday      estimate lower_ci upper_ci lower_pi upper_pi</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true"></a><span class="co">#&gt;    &lt;date&gt;     &lt;int&gt; &lt;fct&gt;           &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true"></a><span class="co">#&gt;  1 2020-05-15    58 rest_of_week   12682.   11390.   14122.     9027    16948</span></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true"></a><span class="co">#&gt;  2 2020-05-16    59 weekend        10625.    9299.   12140.     7562    14199</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true"></a><span class="co">#&gt;  3 2020-05-17    60 weekend        10262.    8956.   11759.     7304    13715</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true"></a><span class="co">#&gt;  4 2020-05-18    61 monday         13840.   11749.   16303.     9852    18494</span></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true"></a><span class="co">#&gt;  5 2020-05-19    62 rest_of_week   11036.    9782.   12450.     7855    14748</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true"></a><span class="co">#&gt;  6 2020-05-20    63 rest_of_week   10659.    9416.   12066.     7586    14245</span></span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true"></a><span class="co">#&gt;  7 2020-05-21    64 rest_of_week   10295.    9064.   11693.     7327    13758</span></span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true"></a><span class="co">#&gt;  8 2020-05-22    65 rest_of_week    9943.    8724.   11333.     7076    13289</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true"></a><span class="co">#&gt;  9 2020-05-23    66 weekend         8330.    7138.    9721.     5928    11134</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true"></a><span class="co">#&gt; 10 2020-05-24    67 weekend         8045.    6872.    9419.     5725    10754</span></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true"></a><span class="co">#&gt; 11 2020-05-25    68 monday         10851.    9048.   13012.     7723    14501</span></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true"></a><span class="co">#&gt; 12 2020-05-26    69 rest_of_week    8652.    7486.   10001.     6157    11564</span></span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true"></a><span class="co">#&gt; 13 2020-05-27    70 rest_of_week    8357.    7204.    9694.     5947    11170</span></span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true"></a><span class="co">#&gt; 14 2020-05-28    71 rest_of_week    8071.    6933.    9396.     5743    10788</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true"></a></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true"></a><span class="co"># without prediction intervals</span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true"></a><span class="st">  </span><span class="kw">predict</span>(pred_data, <span class="dt">add_pi =</span> <span class="ot">FALSE</span>) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb2-72"><a href="#cb2-72" aria-hidden="true"></a><span class="st">  </span><span class="kw">get_result</span>()</span>
+<span id="cb2-73"><a href="#cb2-73" aria-hidden="true"></a><span class="co">#&gt; [[1]]</span></span>
+<span id="cb2-74"><a href="#cb2-74" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_prediction&gt; 14 x 6</span></span>
+<span id="cb2-75"><a href="#cb2-75" aria-hidden="true"></a><span class="co">#&gt;    date         day weekday      estimate lower_ci upper_ci</span></span>
+<span id="cb2-76"><a href="#cb2-76" aria-hidden="true"></a><span class="co">#&gt;    &lt;date&gt;     &lt;int&gt; &lt;fct&gt;           &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span id="cb2-77"><a href="#cb2-77" aria-hidden="true"></a><span class="co">#&gt;  1 2020-05-15    58 rest_of_week   12682.   11390.   14122.</span></span>
+<span id="cb2-78"><a href="#cb2-78" aria-hidden="true"></a><span class="co">#&gt;  2 2020-05-16    59 weekend        10625.    9299.   12140.</span></span>
+<span id="cb2-79"><a href="#cb2-79" aria-hidden="true"></a><span class="co">#&gt;  3 2020-05-17    60 weekend        10262.    8956.   11759.</span></span>
+<span id="cb2-80"><a href="#cb2-80" aria-hidden="true"></a><span class="co">#&gt;  4 2020-05-18    61 monday         13840.   11749.   16303.</span></span>
+<span id="cb2-81"><a href="#cb2-81" aria-hidden="true"></a><span class="co">#&gt;  5 2020-05-19    62 rest_of_week   11036.    9782.   12450.</span></span>
+<span id="cb2-82"><a href="#cb2-82" aria-hidden="true"></a><span class="co">#&gt;  6 2020-05-20    63 rest_of_week   10659.    9416.   12066.</span></span>
+<span id="cb2-83"><a href="#cb2-83" aria-hidden="true"></a><span class="co">#&gt;  7 2020-05-21    64 rest_of_week   10295.    9064.   11693.</span></span>
+<span id="cb2-84"><a href="#cb2-84" aria-hidden="true"></a><span class="co">#&gt;  8 2020-05-22    65 rest_of_week    9943.    8724.   11333.</span></span>
+<span id="cb2-85"><a href="#cb2-85" aria-hidden="true"></a><span class="co">#&gt;  9 2020-05-23    66 weekend         8330.    7138.    9721.</span></span>
+<span id="cb2-86"><a href="#cb2-86" aria-hidden="true"></a><span class="co">#&gt; 10 2020-05-24    67 weekend         8045.    6872.    9419.</span></span>
+<span id="cb2-87"><a href="#cb2-87" aria-hidden="true"></a><span class="co">#&gt; 11 2020-05-25    68 monday         10851.    9048.   13012.</span></span>
+<span id="cb2-88"><a href="#cb2-88" aria-hidden="true"></a><span class="co">#&gt; 12 2020-05-26    69 rest_of_week    8652.    7486.   10001.</span></span>
+<span id="cb2-89"><a href="#cb2-89" aria-hidden="true"></a><span class="co">#&gt; 13 2020-05-27    70 rest_of_week    8357.    7204.    9694.</span></span>
+<span id="cb2-90"><a href="#cb2-90" aria-hidden="true"></a><span class="co">#&gt; 14 2020-05-28    71 rest_of_week    8071.    6933.    9396.</span></span>
+<span id="cb2-91"><a href="#cb2-91" aria-hidden="true"></a></span>
+<span id="cb2-92"><a href="#cb2-92" aria-hidden="true"></a><span class="co"># bootstraped prediction intervals</span></span>
+<span id="cb2-93"><a href="#cb2-93" aria-hidden="true"></a>fitted_model <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb2-94"><a href="#cb2-94" aria-hidden="true"></a><span class="st">  </span><span class="kw">predict</span>(pred_data, <span class="dt">simulate_pi =</span> <span class="ot">TRUE</span>) <span class="op">%&gt;%</span><span class="st"> </span></span>
+<span id="cb2-95"><a href="#cb2-95" aria-hidden="true"></a><span class="st">  </span><span class="kw">get_result</span>()</span>
+<span id="cb2-96"><a href="#cb2-96" aria-hidden="true"></a><span class="co">#&gt; [[1]]</span></span>
+<span id="cb2-97"><a href="#cb2-97" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_prediction&gt; 14 x 8</span></span>
+<span id="cb2-98"><a href="#cb2-98" aria-hidden="true"></a><span class="co">#&gt;    date         day weekday      estimate lower_ci upper_ci lower_pi upper_pi</span></span>
+<span id="cb2-99"><a href="#cb2-99" aria-hidden="true"></a><span class="co">#&gt;    &lt;date&gt;     &lt;int&gt; &lt;fct&gt;           &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span id="cb2-100"><a href="#cb2-100" aria-hidden="true"></a><span class="co">#&gt;  1 2020-05-15    58 rest_of_week   12682.   11390.   14122.     8947    17388</span></span>
+<span id="cb2-101"><a href="#cb2-101" aria-hidden="true"></a><span class="co">#&gt;  2 2020-05-16    59 weekend        10625.    9299.   12140.     7256    14514</span></span>
+<span id="cb2-102"><a href="#cb2-102" aria-hidden="true"></a><span class="co">#&gt;  3 2020-05-17    60 weekend        10262.    8956.   11759.     7206    14222</span></span>
+<span id="cb2-103"><a href="#cb2-103" aria-hidden="true"></a><span class="co">#&gt;  4 2020-05-18    61 monday         13840.   11749.   16303.     9656    19163</span></span>
+<span id="cb2-104"><a href="#cb2-104" aria-hidden="true"></a><span class="co">#&gt;  5 2020-05-19    62 rest_of_week   11036.    9782.   12450.     7685    15066</span></span>
+<span id="cb2-105"><a href="#cb2-105" aria-hidden="true"></a><span class="co">#&gt;  6 2020-05-20    63 rest_of_week   10659.    9416.   12066.     7340    14489</span></span>
+<span id="cb2-106"><a href="#cb2-106" aria-hidden="true"></a><span class="co">#&gt;  7 2020-05-21    64 rest_of_week   10295.    9064.   11693.     7127    14346</span></span>
+<span id="cb2-107"><a href="#cb2-107" aria-hidden="true"></a><span class="co">#&gt;  8 2020-05-22    65 rest_of_week    9943.    8724.   11333.     6815    13563</span></span>
+<span id="cb2-108"><a href="#cb2-108" aria-hidden="true"></a><span class="co">#&gt;  9 2020-05-23    66 weekend         8330.    7138.    9721.     5741    11425</span></span>
+<span id="cb2-109"><a href="#cb2-109" aria-hidden="true"></a><span class="co">#&gt; 10 2020-05-24    67 weekend         8045.    6872.    9419.     5618    11199</span></span>
+<span id="cb2-110"><a href="#cb2-110" aria-hidden="true"></a><span class="co">#&gt; 11 2020-05-25    68 monday         10851.    9048.   13012.     7461    15158</span></span>
+<span id="cb2-111"><a href="#cb2-111" aria-hidden="true"></a><span class="co">#&gt; 12 2020-05-26    69 rest_of_week    8652.    7486.   10001.     5990    11973</span></span>
+<span id="cb2-112"><a href="#cb2-112" aria-hidden="true"></a><span class="co">#&gt; 13 2020-05-27    70 rest_of_week    8357.    7204.    9694.     5673    11491</span></span>
+<span id="cb2-113"><a href="#cb2-113" aria-hidden="true"></a><span class="co">#&gt; 14 2020-05-28    71 rest_of_week    8071.    6933.    9396.     5525    10976</span></span></code></pre></div>
+</div>
+<div id="example-of-failed-model-fitting" class="section level2">
+<h2>Example of failed model fitting</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>(model2  &lt;-<span class="st"> </span><span class="kw">glm_nb_model</span>(count <span class="op">~</span><span class="st"> </span>day <span class="op">+</span><span class="st"> </span>nonexistent))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="co">#&gt; Untrained trending model:</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a><span class="co">#&gt;     glm.nb(formula = count ~ day + nonexistent)</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a>(fitted_model2 &lt;-<span class="st"> </span><span class="kw">fit</span>(model2, fitting_data))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_fit_tbl&gt; 1 x 3</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a><span class="co">#&gt;   result warnings errors   </span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a><span class="co">#&gt;   &lt;list&gt; &lt;list&gt;   &lt;list&gt;   </span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a><span class="co">#&gt; 1 &lt;NULL&gt; &lt;NULL&gt;   &lt;chr [1]&gt;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a><span class="kw">get_result</span>(fitted_model2)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a><span class="co">#&gt; [[1]]</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a><span class="co">#&gt; NULL</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a><span class="kw">get_errors</span>(fitted_model2)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a><span class="co">#&gt; [[1]]</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a><span class="co">#&gt; [1] &quot;object &#39;nonexistent&#39; not found&quot;</span></span></code></pre></div>
 </div>
 <div id="multiple-models" class="section level2">
 <h2>Multiple models</h2>
-<p>When working with a list of models Trending captures both errors and warnings so the user can choose how to proceed. In this situation the fitted output will be of class <code>trending_model_fit_list</code> which is a list with named lists for each model containing components result, warnings and errors. If an error occurs, then the error object is captured and the result has a NULL value. If the model does not error then result is the corresponding model output and the error entry will be NULL. Similarly, the warning component will be a vector of all warnings that occurred.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>models  &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>  <span class="dt">simple =</span> <span class="kw">lm_model</span>(count <span class="op">~</span><span class="st"> </span>day),</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a>  <span class="dt">glm_poisson =</span> <span class="kw">glm_model</span>(count <span class="op">~</span><span class="st"> </span>day, <span class="dt">family =</span> <span class="st">&quot;poisson&quot;</span>),</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a>  <span class="dt">glm_negbin =</span> <span class="kw">glm_nb_model</span>(count <span class="op">~</span><span class="st"> </span>day <span class="op">+</span><span class="st"> </span>weekday),</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>  <span class="dt">will_error =</span> <span class="kw">glm_nb_model</span>(count <span class="op">~</span><span class="st"> </span>day <span class="op">+</span><span class="st"> </span>nonexistant)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>res &lt;-<span class="st"> </span>models <span class="op">%&gt;%</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a><span class="st">  </span><span class="kw">fit</span>(fitting_data)</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>res</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a><span class="co">#&gt; # A tibble: 4 x 5</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a><span class="co">#&gt;   model_name  data                 fitted_model  fitting_warnings fitting_errors</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;list&gt;               &lt;named list&gt;  &lt;named list&gt;     &lt;named list&gt;  </span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true"></a><span class="co">#&gt; 1 simple      &lt;tibble[,5] [43 × 5… &lt;trndng__ [2… &lt;NULL&gt;           &lt;NULL&gt;        </span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true"></a><span class="co">#&gt; 2 glm_poisson &lt;tibble[,5] [43 × 5… &lt;trndng__ [2… &lt;NULL&gt;           &lt;NULL&gt;        </span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true"></a><span class="co">#&gt; 3 glm_negbin  &lt;tibble[,5] [43 × 5… &lt;trndng__ [2… &lt;NULL&gt;           &lt;NULL&gt;        </span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true"></a><span class="co">#&gt; 4 will_error  &lt;tibble[,5] [43 × 5… &lt;NULL&gt;        &lt;NULL&gt;           &lt;chr [1]&gt;</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true"></a></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true"></a>res <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">glimpse</span>()</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true"></a><span class="co">#&gt; Rows: 4</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true"></a><span class="co">#&gt; Columns: 5</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true"></a><span class="co">#&gt; $ model_name       &lt;chr&gt; &quot;simple&quot;, &quot;glm_poisson&quot;, &quot;glm_negbin&quot;, &quot;will_error&quot;</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true"></a><span class="co">#&gt; $ data             &lt;list&gt; [&lt;tbl_df[43 x 5]&gt;], [&lt;tbl_df[43 x 5]&gt;], [&lt;tbl_df[43 x…</span></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true"></a><span class="co">#&gt; $ fitted_model     &lt;named list&gt; [[69201.584, -1092.913, 19109.1089, 11650.0217, 1789…</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true"></a><span class="co">#&gt; $ fitting_warnings &lt;named list&gt; &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true"></a><span class="co">#&gt; $ fitting_errors   &lt;named list&gt; &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;, &quot;object &#39;nonexistant&#39; …</span></span></code></pre></div>
-<p><code>trending_model_fit_list</code> objects can then be used with <code>predict()</code> which similarly captures warnings and errors and returns the model predictions in a column called <strong>output</strong>.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>res &lt;-<span class="st"> </span>models <span class="op">%&gt;%</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a><span class="st">  </span><span class="kw">fit</span>(fitting_data) <span class="op">%&gt;%</span><span class="st"> </span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true"></a><span class="st">  </span><span class="kw">predict</span>(pred_data)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true"></a>res</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true"></a><span class="co">#&gt; # A tibble: 4 x 8</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true"></a><span class="co">#&gt;   model_name  data        fitted_model fitting_warnings fitting_errors output   </span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;list&gt;      &lt;named list&gt; &lt;named list&gt;     &lt;named list&gt;   &lt;named l&gt;</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true"></a><span class="co">#&gt; 1 simple      &lt;tibble[,5… &lt;trndng__ [… &lt;NULL&gt;           &lt;NULL&gt;         &lt;df[,8] …</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true"></a><span class="co">#&gt; 2 glm_poisson &lt;tibble[,5… &lt;trndng__ [… &lt;NULL&gt;           &lt;NULL&gt;         &lt;df[,8] …</span></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true"></a><span class="co">#&gt; 3 glm_negbin  &lt;tibble[,5… &lt;trndng__ [… &lt;NULL&gt;           &lt;NULL&gt;         &lt;df[,8] …</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true"></a><span class="co">#&gt; 4 will_error  &lt;tibble[,5… &lt;NULL&gt;       &lt;NULL&gt;           &lt;chr [1]&gt;      &lt;NULL&gt;   </span></span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true"></a><span class="co">#&gt; # … with 2 more variables: prediction_warnings &lt;named list&gt;,</span></span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true"></a><span class="co">#&gt; #   prediction_errors &lt;named list&gt;</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true"></a></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true"></a>res <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">glimpse</span>()</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true"></a><span class="co">#&gt; Rows: 4</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true"></a><span class="co">#&gt; Columns: 8</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true"></a><span class="co">#&gt; $ model_name          &lt;chr&gt; &quot;simple&quot;, &quot;glm_poisson&quot;, &quot;glm_negbin&quot;, &quot;will_error&quot;</span></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true"></a><span class="co">#&gt; $ data                &lt;list&gt; [&lt;tbl_df[43 x 5]&gt;], [&lt;tbl_df[43 x 5]&gt;], [&lt;tbl_df[4…</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true"></a><span class="co">#&gt; $ fitted_model        &lt;named list&gt; [[69201.584, -1092.913, 19109.1089, 11650.0217, 1…</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true"></a><span class="co">#&gt; $ fitting_warnings    &lt;named list&gt; &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;</span></span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true"></a><span class="co">#&gt; $ fitting_errors      &lt;named list&gt; &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;, &quot;object &#39;nonexistan…</span></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true"></a><span class="co">#&gt; $ output              &lt;named list&gt; [&lt;data.frame[14 x 8]&gt;], [&lt;data.frame[14 x 8…</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true"></a><span class="co">#&gt; $ prediction_warnings &lt;named list&gt; &lt;NULL&gt;, &quot;The response is not continuous, so…</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true"></a><span class="co">#&gt; $ prediction_errors   &lt;named list&gt; &lt;NULL&gt;, &lt;NULL&gt;, &lt;NULL&gt;, &quot;no applicable meth…</span></span></code></pre></div>
+<p>The fit function also works with a list input of multiple models.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>models  &lt;-<span class="st"> </span><span class="kw">list</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>  <span class="dt">simple =</span> <span class="kw">lm_model</span>(count <span class="op">~</span><span class="st"> </span>day),</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>  <span class="dt">glm_poisson =</span> <span class="kw">glm_model</span>(count <span class="op">~</span><span class="st"> </span>day, <span class="dt">family =</span> <span class="st">&quot;poisson&quot;</span>),</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true"></a>  <span class="dt">glm_negbin =</span> <span class="kw">glm_nb_model</span>(count <span class="op">~</span><span class="st"> </span>day <span class="op">+</span><span class="st"> </span>weekday),</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true"></a>  <span class="dt">will_error =</span> <span class="kw">glm_nb_model</span>(count <span class="op">~</span><span class="st"> </span>day <span class="op">+</span><span class="st"> </span>nonexistant)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true"></a>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true"></a>(fitted_tbl &lt;-<span class="st"> </span><span class="kw">fit</span>(models, fitting_data))</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_fit_tbl&gt; 4 x 4</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true"></a><span class="co">#&gt;   model_name  result       warnings     errors      </span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;named list&gt; &lt;named list&gt; &lt;named list&gt;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true"></a><span class="co">#&gt; 1 simple      &lt;lm&gt;         &lt;NULL&gt;       &lt;NULL&gt;      </span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true"></a><span class="co">#&gt; 2 glm_poisson &lt;glm&gt;        &lt;NULL&gt;       &lt;NULL&gt;      </span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true"></a><span class="co">#&gt; 3 glm_negbin  &lt;negbin&gt;     &lt;NULL&gt;       &lt;NULL&gt;      </span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true"></a><span class="co">#&gt; 4 will_error  &lt;NULL&gt;       &lt;NULL&gt;       &lt;chr [1]&gt;</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true"></a><span class="kw">get_result</span>(fitted_tbl)</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true"></a><span class="co">#&gt; $simple</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true"></a><span class="co">#&gt; Call:</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true"></a><span class="co">#&gt; lm(formula = count ~ day, data = fitting_data)</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true"></a><span class="co">#&gt; (Intercept)          day  </span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true"></a><span class="co">#&gt;       69202        -1093  </span></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true"></a><span class="co">#&gt; $glm_poisson</span></span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true"></a><span class="co">#&gt; Call:  glm(formula = count ~ day, family = &quot;poisson&quot;, data = fitting_data)</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true"></a><span class="co">#&gt; (Intercept)          day  </span></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true"></a><span class="co">#&gt;    11.57014     -0.03822  </span></span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true"></a><span class="co">#&gt; Degrees of Freedom: 42 Total (i.e. Null);  41 Residual</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true"></a><span class="co">#&gt; Null Deviance:       321600 </span></span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true"></a><span class="co">#&gt; Residual Deviance: 50970     AIC: 51490</span></span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true"></a><span class="co">#&gt; $glm_negbin</span></span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true"></a><span class="co">#&gt; Call:  glm.nb(formula = count ~ day + weekday, data = fitting_data, </span></span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true"></a><span class="co">#&gt;     init.theta = 39.34595795, link = log)</span></span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true"></a><span class="co">#&gt; Coefficients:</span></span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true"></a><span class="co">#&gt;    (Intercept)             day   weekdaymonday  weekdayweekend  </span></span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true"></a><span class="co">#&gt;       11.46417        -0.03476         0.19162        -0.14224  </span></span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true"></a><span class="co">#&gt; Degrees of Freedom: 42 Total (i.e. Null);  39 Residual</span></span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true"></a><span class="co">#&gt; Null Deviance:       395.9 </span></span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true"></a><span class="co">#&gt; Residual Deviance: 43.17     AIC: 850.6</span></span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true"></a><span class="co">#&gt; $will_error</span></span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
+<p>This can also then be used with <code>predict()</code></p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true"></a>(pred &lt;-<span class="st"> </span><span class="kw">predict</span>(fitted_tbl, pred_data))</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_predict_tbl&gt; 4 x 4</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true"></a><span class="co">#&gt;   model_name  result              warnings     errors      </span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true"></a><span class="co">#&gt;   &lt;chr&gt;       &lt;named list&gt;        &lt;named list&gt; &lt;named list&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true"></a><span class="co">#&gt; 1 simple      &lt;trndng_p [14 × 8]&gt; &lt;NULL&gt;       &lt;NULL&gt;      </span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true"></a><span class="co">#&gt; 2 glm_poisson &lt;trndng_p [14 × 8]&gt; &lt;NULL&gt;       &lt;NULL&gt;      </span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true"></a><span class="co">#&gt; 3 glm_negbin  &lt;trndng_p [14 × 8]&gt; &lt;NULL&gt;       &lt;NULL&gt;      </span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true"></a><span class="co">#&gt; 4 will_error  &lt;NULL&gt;              &lt;NULL&gt;       &lt;chr [1]&gt;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true"></a><span class="kw">get_result</span>(pred)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true"></a><span class="co">#&gt; $simple</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_prediction&gt; 14 x 8</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true"></a><span class="co">#&gt;    date         day weekday      estimate lower_ci upper_ci lower_pi upper_pi</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true"></a><span class="co">#&gt;    &lt;date&gt;     &lt;int&gt; &lt;fct&gt;           &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true"></a><span class="co">#&gt;  1 2020-05-15    58 rest_of_week    5813.     234.   11392.  -13007.   24632.</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true"></a><span class="co">#&gt;  2 2020-05-16    59 weekend         4720.   -1053.   10492.  -14158.   23597.</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true"></a><span class="co">#&gt;  3 2020-05-17    60 weekend         3627.   -2341.    9594.  -15311.   22565.</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true"></a><span class="co">#&gt;  4 2020-05-18    61 monday          2534.   -3631.    8699.  -16467.   21535.</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true"></a><span class="co">#&gt;  5 2020-05-19    62 rest_of_week    1441.   -4922.    7804.  -17626.   20508.</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true"></a><span class="co">#&gt;  6 2020-05-20    63 rest_of_week     348.   -6215.    6911.  -18786.   19482.</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true"></a><span class="co">#&gt;  7 2020-05-21    64 rest_of_week    -745.   -7509.    6020.  -19949.   18459.</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true"></a><span class="co">#&gt;  8 2020-05-22    65 rest_of_week   -1838.   -8805.    5129.  -21114.   17439.</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true"></a><span class="co">#&gt;  9 2020-05-23    66 weekend        -2931.  -10101.    4240.  -22282.   16420.</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true"></a><span class="co">#&gt; 10 2020-05-24    67 weekend        -4024.  -11399.    3352.  -23451.   15404.</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true"></a><span class="co">#&gt; 11 2020-05-25    68 monday         -5116.  -12697.    2464.  -24623.   14390.</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true"></a><span class="co">#&gt; 12 2020-05-26    69 rest_of_week   -6209.  -13996.    1578.  -25797.   13378.</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true"></a><span class="co">#&gt; 13 2020-05-27    70 rest_of_week   -7302.  -15296.     692.  -26973.   12369.</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true"></a><span class="co">#&gt; 14 2020-05-28    71 rest_of_week   -8395.  -16597.    -193.  -28152.   11361.</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true"></a><span class="co">#&gt; $glm_poisson</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_prediction&gt; 14 x 8</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true"></a><span class="co">#&gt;    date         day weekday      estimate lower_ci upper_ci lower_pi upper_pi</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true"></a><span class="co">#&gt;    &lt;date&gt;     &lt;int&gt; &lt;fct&gt;           &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true"></a><span class="co">#&gt;  1 2020-05-15    58 rest_of_week   11535.   11484.   11587.    11275    11798</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true"></a><span class="co">#&gt;  2 2020-05-16    59 weekend        11103.   11052.   11154.    10846    11361</span></span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true"></a><span class="co">#&gt;  3 2020-05-17    60 weekend        10686.   10636.   10737.    10434    10941</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true"></a><span class="co">#&gt;  4 2020-05-18    61 monday         10286.   10236.   10336.    10038    10536</span></span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true"></a><span class="co">#&gt;  5 2020-05-19    62 rest_of_week    9900.    9850.    9950.     9656    10146</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true"></a><span class="co">#&gt;  6 2020-05-20    63 rest_of_week    9529.    9480.    9578.     9289     9770</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true"></a><span class="co">#&gt;  7 2020-05-21    64 rest_of_week    9171.    9123.    9220.     8936     9409</span></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true"></a><span class="co">#&gt;  8 2020-05-22    65 rest_of_week    8827.    8780.    8876.     8596     9061</span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true"></a><span class="co">#&gt;  9 2020-05-23    66 weekend         8496.    8449.    8544.     8269     8726</span></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true"></a><span class="co">#&gt; 10 2020-05-24    67 weekend         8178.    8131.    8225.     7955     8403</span></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true"></a><span class="co">#&gt; 11 2020-05-25    68 monday          7871.    7825.    7917.     7652     8092</span></span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true"></a><span class="co">#&gt; 12 2020-05-26    69 rest_of_week    7576.    7531.    7621.     7361     7793</span></span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true"></a><span class="co">#&gt; 13 2020-05-27    70 rest_of_week    7292.    7247.    7337.     7081     7505</span></span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true"></a><span class="co">#&gt; 14 2020-05-28    71 rest_of_week    7018.    6974.    7063.     6811     7228</span></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true"></a><span class="co">#&gt; $glm_negbin</span></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true"></a><span class="co">#&gt; &lt;trending_prediction&gt; 14 x 8</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true"></a><span class="co">#&gt;    date         day weekday      estimate lower_ci upper_ci lower_pi upper_pi</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true"></a><span class="co">#&gt;    &lt;date&gt;     &lt;int&gt; &lt;fct&gt;           &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true"></a><span class="co">#&gt;  1 2020-05-15    58 rest_of_week   12682.   11390.   14122.     8107    18870</span></span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true"></a><span class="co">#&gt;  2 2020-05-16    59 weekend        10625.    9299.   12140.     6618    16223</span></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true"></a><span class="co">#&gt;  3 2020-05-17    60 weekend        10262.    8956.   11759.     6373    15714</span></span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true"></a><span class="co">#&gt;  4 2020-05-18    61 monday         13840.   11749.   16303.     8363    21784</span></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true"></a><span class="co">#&gt;  5 2020-05-19    62 rest_of_week   11036.    9782.   12450.     6962    16638</span></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true"></a><span class="co">#&gt;  6 2020-05-20    63 rest_of_week   10659.    9416.   12066.     6701    16124</span></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true"></a><span class="co">#&gt;  7 2020-05-21    64 rest_of_week   10295.    9064.   11693.     6450    15626</span></span>
+<span id="cb5-59"><a href="#cb5-59" aria-hidden="true"></a><span class="co">#&gt;  8 2020-05-22    65 rest_of_week    9943.    8724.   11333.     6208    15145</span></span>
+<span id="cb5-60"><a href="#cb5-60" aria-hidden="true"></a><span class="co">#&gt;  9 2020-05-23    66 weekend         8330.    7138.    9721.     5079    12992</span></span>
+<span id="cb5-61"><a href="#cb5-61" aria-hidden="true"></a><span class="co">#&gt; 10 2020-05-24    67 weekend         8045.    6872.    9419.     4889    12588</span></span>
+<span id="cb5-62"><a href="#cb5-62" aria-hidden="true"></a><span class="co">#&gt; 11 2020-05-25    68 monday         10851.    9048.   13012.     6439    17388</span></span>
+<span id="cb5-63"><a href="#cb5-63" aria-hidden="true"></a><span class="co">#&gt; 12 2020-05-26    69 rest_of_week    8652.    7486.   10001.     5326    13366</span></span>
+<span id="cb5-64"><a href="#cb5-64" aria-hidden="true"></a><span class="co">#&gt; 13 2020-05-27    70 rest_of_week    8357.    7204.    9694.     5126    12955</span></span>
+<span id="cb5-65"><a href="#cb5-65" aria-hidden="true"></a><span class="co">#&gt; 14 2020-05-28    71 rest_of_week    8071.    6933.    9396.     4933    12558</span></span>
+<span id="cb5-66"><a href="#cb5-66" aria-hidden="true"></a><span class="co">#&gt; </span></span>
+<span id="cb5-67"><a href="#cb5-67" aria-hidden="true"></a><span class="co">#&gt; $will_error</span></span>
+<span id="cb5-68"><a href="#cb5-68" aria-hidden="true"></a><span class="co">#&gt; NULL</span></span></code></pre></div>
 </div>
 </div>
 

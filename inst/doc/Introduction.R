@@ -1,19 +1,19 @@
 ## ---- include = FALSE---------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.align = "center",
+  fig.width = 7,
+  fig.height = 5
 )
 
-## -----------------------------------------------------------------------------
+## ----message=FALSE------------------------------------------------------------
 library(outbreaks)  # for data
 library(trending)   # for trend fitting
-library(dplyr, warn.conflicts = FALSE)  # for data manipulation
+library(dplyr)      # for data manipulation
 
 # load data
 data(covid19_england_nhscalls_2020)
-
-# define a model
-model  <- glm_nb_model(count ~ day + weekday)
 
 # select 6 weeks of data (from a period when the prevalence was decreasing)
 last_date <- as.Date("2020-05-28")
@@ -33,27 +33,36 @@ dat <-
 fitting_data <- dat[[2]]
 pred_data <- select(dat[[1]], date, day, weekday)
 
-fitted_model <- fit(model, fitting_data)
+## -----------------------------------------------------------------------------
+(model  <- glm_nb_model(count ~ day + weekday))
+(fitted_model <- fit(model, fitting_data))
+fitted_model %>% get_result()
 
 # default
 fitted_model %>% 
   predict(pred_data) %>%
-  glimpse()
+  get_result()
+
+# without uncertainty
+fitted_model %>% 
+  predict(pred_data, uncertain = FALSE) %>% 
+  get_result()
 
 # without prediction intervals
 fitted_model %>% 
   predict(pred_data, add_pi = FALSE) %>% 
-  glimpse()
+  get_result()
 
-# without uncertainty
+# bootstraped prediction intervals
 fitted_model %>% 
-  predict(pred_data, uncertainty = FALSE) %>% 
-  glimpse()
+  predict(pred_data, simulate_pi = TRUE) %>% 
+  get_result()
 
-# non-bootstraped (parametric) prediction intervals
-fitted_model %>% 
-  predict(pred_data, simulate_pi = FALSE) %>% 
-  glimpse()
+## -----------------------------------------------------------------------------
+(model2  <- glm_nb_model(count ~ day + nonexistent))
+(fitted_model2 <- fit(model2, fitting_data))
+get_result(fitted_model2)
+get_errors(fitted_model2)
 
 ## -----------------------------------------------------------------------------
 models  <- list(
@@ -62,21 +71,10 @@ models  <- list(
   glm_negbin = glm_nb_model(count ~ day + weekday),
   will_error = glm_nb_model(count ~ day + nonexistant)
 )
-
-res <- models %>%
-  fit(fitting_data)
-
-res
-
-res %>% glimpse()
-
+(fitted_tbl <- fit(models, fitting_data))
+get_result(fitted_tbl)
 
 ## -----------------------------------------------------------------------------
-res <- models %>%
-  fit(fitting_data) %>% 
-  predict(pred_data)
-
-res
-
-res %>% glimpse()
+(pred <- predict(fitted_tbl, pred_data))
+get_result(pred)
 
